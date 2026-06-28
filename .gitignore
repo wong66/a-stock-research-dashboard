@@ -1,0 +1,124 @@
+# === Dependencies ===
+node_modules/
+.pnpm-store/
+.yarn/
+vendor/
+
+# === Python ===
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+
+# === Build output ===
+dist/
+build/
+.next/
+.nuxt/
+out/
+target/
+.astro/
+.vite/
+.wrangler/
+*.tsbuildinfo
+
+# === Env & Secrets ===
+.env
+.env.local
+.env.production
+.env.development.local
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === IDE ===
+.idea/
+.vscode/
+*.sublime-*
+
+# === Git (nested repos) ===
+# Keep nested .git dirs excluded
+
+# === Logs & temp ===
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+.ruff_cache/
+
+# === Large binary files ===
+*.zip
+*.tar.gz
+*.7z
+*.mp4
+*.avi
+*.mov
+*.pdf
+*.pptx
+*.docx
+*.xlsx
+
+# === Package locks (noisy) ===
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# === Project-specific ===
+astock-peg/analyses/*/
+!astock-peg/analyses/index.json
+astock-peg/web/portfolio.json
+astock-peg/web/.claude/
+astock-peg/开发日志.md
+
+# Vibe-Trading specific
+Vibe-Trading/data/*.duckdb
+Vibe-Trading/data/*.duckdb.wal
+Vibe-Trading/data/.duckdb_tmp/
+Vibe-Trading/data/parquet/
+Vibe-Trading/data/backup/
+Vibe-Trading/data/minutes/
+Vibe-Trading/data/overnight*.log
+Vibe-Trading/data/test_write.txt
+Vibe-Trading/agent/sessions/
+Vibe-Trading/agent/runs/
+Vibe-Trading/agent/.ui_runtime/
+Vibe-Trading/agent/.tasks/
+Vibe-Trading/agent/uploads/
+Vibe-Trading/agent/tests/*_result.json
+Vibe-Trading/agent/.pytest_tmp/
+Vibe-Trading/agent/tests/e2e_backtest/
+Vibe-Trading/agent/tests/e2e_*.py
+Vibe-Trading/agent/tests/test_e2e_*.py
+Vibe-Trading/wiki/.wrangler/
+Vibe-Trading/wiki/.cache/
+Vibe-Trading/results/
+Vibe-Trading/docs/
+!Vibe-Trading/wiki/docs/
+!Vibe-Trading/wiki/docs/**
+Vibe-Trading/docs/screenshots/
+Vibe-Trading/assets/*.mp4
+Vibe-Trading/demo/
+Vibe-Trading/NOTES.md
+Vibe-Trading/AGENTS.md
+Vibe-Trading/.vibe-dev/
+Vibe-Trading/.vibe-record/
+Vibe-Trading/.cache/
+Vibe-Trading/.remotion/
+Vibe-Trading/wiki/alpha-library/manifest.json
+Vibe-Trading/wiki/alpha-library/content/
+Vibe-Trading/wiki/.cache/
+Vibe-Trading/.wrangler/
+
+# CodeBuddy / WorkBuddy internal
+.claude/*
+!.claude/hooks.json
+.workbuddy/screenshots/
+.codebuddy/
+
+# Coverage
+.coverage
+coverage.xml
+.pytest_cache/

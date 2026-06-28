@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+vendor/
+.pnpm-store/
+.yarn/
+
+# Build output
+dist/
+build/
+.next/
+.nuxt/
+out/
+target/
+
+# Git
+.git/
+
+# Logs & temp
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
+
+# Large binary files
+*.zip
+*.tar.gz
+*.7z
+*.mp4
+*.avi
+*.mov
+*.pdf
+*.pptx
+*.docx
+*.xlsx
+
+# Package locks (usually noisy)
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
