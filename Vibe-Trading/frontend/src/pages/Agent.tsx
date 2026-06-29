@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Send, Loader2, ArrowDown, Square, Download, Plus, Paperclip, X, Users, Target, ChevronDown, Pencil, Check, Play, OctagonX, Activity, Ban, CheckCircle2, Landmark } from "lucide-react";
+import { Send, Loader2, ArrowDown, Square, Download, Plus, Paperclip, X, Users, Target, ChevronDown, Pencil, Check, Play, OctagonX, Landmark } from "lucide-react";
 import { toast } from "sonner";
 import { useAgentStore } from "@/stores/agent";
 import { useSSE } from "@/hooks/useSSE";
@@ -16,48 +16,35 @@ import { ToolProgressIndicator } from "@/components/chat/ToolProgressIndicator";
 import { MandateProposalCard } from "@/components/chat/MandateProposalCard";
 import { RunnerStatus } from "@/components/chat/RunnerStatus";
 import { SwarmStatusCard } from "@/components/chat/SwarmStatusCard";
+import { LiveActionChip } from "@/components/chat/LiveActionChip";
 import {
   applySwarmEvent,
   buildSwarmStatusFromStarted,
   buildSwarmStatusFromToolResultPreview,
 } from "@/lib/swarmStatus";
-
-/* ---------- Message grouping ---------- */
-type MsgGroup =
-  | { kind: "single"; msg: AgentMessage }
-  | { kind: "timeline"; msgs: AgentMessage[] };
-
-function groupMessages(msgs: AgentMessage[]): MsgGroup[] {
-  const out: MsgGroup[] = [];
-  let buf: AgentMessage[] = [];
-  const flush = () => { if (buf.length) { out.push({ kind: "timeline", msgs: [...buf] }); buf = []; } };
-  for (const m of msgs) {
-    if (["thinking", "tool_call", "tool_result", "compact"].includes(m.type)) {
-      buf.push(m);
-    } else {
-      flush();
-      out.push({ kind: "single", msg: m });
-    }
-  }
-  flush();
-  return out;
-}
+import {
+  groupMessages,
+  isGlobalLiveHalt,
+  haltScopeStillActive,
+  getGoalProgress,
+  isCriterionStatusMet,
+  criterionCovered,
+  criterionEvidenceCount,
+  criterionIndexLabel,
+  statusLabel,
+  isTerminalGoalStatus,
+  latestGoalEvidence,
+  goalKickoffPrompt,
+  goalContinuePrompt,
+  LIVE_STATUS_POLL_INTERVAL_MS,
+  CONNECTOR_CHECK_PROMPT,
+  CONNECTOR_PORTFOLIO_PROMPT,
+  type MsgGroup,
+} from "@/lib/agent-helpers";
 
 const act = () => useAgentStore.getState();
 
-/** Poll cadence for the shared `GET /live/status` snapshot. */
-const LIVE_STATUS_POLL_INTERVAL_MS = 15_000;
-const CONNECTOR_CHECK_PROMPT =
-  "List my trading connector profiles, show which one is selected, then check that selected connector. If it is not ready, tell me exactly what setup step is missing. Do not place or modify orders.";
-const CONNECTOR_PORTFOLIO_PROMPT =
-  "Use the selected trading connector profile to summarize my account, positions, concentration, cash, and portfolio risk. Do not place or modify orders.";
-
-/* ---------- Connector runtime channel ----------
- * Mandate proposals and live-action chips render as standalone timeline items,
- * never folded into the thinking timeline (SPEC Consent §2 grouping note). They
- * are driven by dedicated state rather than the chat message store because they
- * are privileged-surface artifacts, not chat messages, and the proposal card
- * needs commit/adjust callbacks the generic MessageBubble does not carry. */
+/* ---------- Connector runtime channel ---------- */
 interface ProposalItem {
   kind: "proposal";
   timestamp: number;
@@ -69,140 +56,6 @@ interface LiveActionItem {
   action: LiveAction;
 }
 type LiveItem = ProposalItem | LiveActionItem;
-
-function normalizeBrokerScope(broker: string | null | undefined): string | null {
-  const normalized = broker?.trim().toLowerCase();
-  return normalized || null;
-}
-
-function isGlobalLiveHalt(halt: LiveHalted | null): boolean {
-  return halt != null && normalizeBrokerScope(halt.broker) == null;
-}
-
-function haltScopeStillActive(halt: LiveHalted, status: LiveStatus): boolean {
-  const broker = normalizeBrokerScope(halt.broker);
-  if (!broker) return status.global_halted;
-  return status.global_halted || status.brokers.some((item) => (
-    normalizeBrokerScope(item.auth.broker) === broker && item.halted
-  ));
-}
-
-function liveActionStyle(kind: string): { icon: typeof Activity; tone: string } {
-  switch (kind) {
-    case "order_rejected":
-    case "breach":
-      return { icon: Ban, tone: "border-amber-500/40 bg-amber-500/5 text-amber-600 dark:text-amber-400" };
-    case "halt_tripped":
-      return { icon: OctagonX, tone: "border-destructive/40 bg-destructive/5 text-destructive" };
-    case "mandate_committed":
-    case "halt_cleared":
-      return { icon: CheckCircle2, tone: "border-emerald-500/40 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400" };
-    default:
-      return { icon: Activity, tone: "border-sky-500/40 bg-sky-500/5 text-sky-600 dark:text-sky-400" };
-  }
-}
-
-function liveActionLabel(action: LiveAction): string {
-  return action.kind.replace(/_/g, " ");
-}
-
-function LiveActionChip({ action }: { action: LiveAction }) {
-  const { icon: Icon, tone } = liveActionStyle(action.kind);
-  return (
-    <div className="flex gap-3">
-      <AgentAvatar />
-      <div className="flex-1 min-w-0">
-        <div className={["inline-flex max-w-full flex-wrap items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs", tone].join(" ")}>
-          <Icon className="h-3 w-3 shrink-0" />
-          <span className="shrink-0 font-medium uppercase tracking-wide text-[10px]">RUNTIME</span>
-          <span className="shrink-0 font-medium">{liveActionLabel(action)}</span>
-          {action.intent_normalized && (
-            <span className="truncate text-foreground/80">· {action.intent_normalized}</span>
-          )}
-          {action.outcome && (
-            <span className="shrink-0 font-mono text-[10px] text-muted-foreground">· {action.outcome}</span>
-          )}
-          {action.remote_tool && (
-            <span className="shrink-0 font-mono text-[10px] text-muted-foreground">· {action.remote_tool}</span>
-          )}
-          {action.error && <span className="truncate text-destructive">· {action.error}</span>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function isCriterionStatusMet(status: string): boolean {
-  return !["", "pending", "open", "unsatisfied"].includes(status.toLowerCase());
-}
-
-function getGoalProgress(snapshot: GoalSnapshot | null): {
-  met: number;
-  total: number;
-  label: string;
-  metLabel: string;
-  evidenceTotal: number;
-} {
-  const total = snapshot?.criteria.length ?? 0;
-  const met = snapshot?.criteria.filter((item) => criterionCovered(snapshot, item)).length ?? 0;
-  const evidenceTotal = snapshot?.evidence_count ?? 0;
-  return {
-    met,
-    total,
-    label: total > 0 ? `${met}/${total}` : "",
-    metLabel: total > 0 ? `${met}/${total} met` : "",
-    evidenceTotal,
-  };
-}
-
-function statusLabel(status: string): string {
-  return status.replace(/_/g, " ");
-}
-
-function isTerminalGoalStatus(status: string): boolean {
-  return ["complete", "cancelled", "blocked", "superseded", "usage_limited"].includes(status);
-}
-
-function criterionIndexLabel(index: number): string {
-  return String(index + 1);
-}
-
-function criterionEvidenceCount(snapshot: GoalSnapshot, criterionId: string): number {
-  return snapshot.evidence.filter((item) => item.criterion_id === criterionId).length;
-}
-
-function criterionCovered(snapshot: GoalSnapshot, criterion: GoalSnapshot["criteria"][number]): boolean {
-  return isCriterionStatusMet(criterion.status) || criterionEvidenceCount(snapshot, criterion.criterion_id) > 0;
-}
-
-function latestGoalEvidence(snapshot: GoalSnapshot) {
-  return [...snapshot.evidence]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 2);
-}
-
-function goalKickoffPrompt(objective: string): string {
-  return [
-    "立即开始执行此研究目标。",
-    "仅限研究用途，需要证据时使用可用工具，将具体证据添加到目标账本，持续执行直至目标完成、阻塞、等待用户输入或达到预算上限。",
-    "",
-    `Goal: ${objective}`,
-  ].join("\n");
-}
-
-function goalContinuePrompt(snapshot: GoalSnapshot): string {
-  const openCriteria = snapshot.criteria
-    .filter((item) => item.required && !criterionCovered(snapshot, item))
-    .map((item) => `- ${item.text}`)
-    .join("\n");
-  return [
-    "继续执行当前研究目标。",
-    "按需使用实际可用工具，将证据添加到目标账本，仅在目标完成、阻塞、等待用户输入或达到预算上限时停止。",
-    "",
-    `Goal: ${snapshot.goal.objective}`,
-    openCriteria ? `Open criteria:\n${openCriteria}` : "所有标准似已覆盖；审计账本，若完成已合理则更新目标状态。",
-  ].join("\n");
-}
 
 /* ---------- Component ---------- */
 export function Agent() {

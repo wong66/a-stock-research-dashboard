@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, memo } from "react";
 import { useECharts } from "@/hooks/useECharts";
 import { getChartTheme } from "@/lib/chart-theme";
 
@@ -29,7 +29,7 @@ const AXIS_TOOLTIP_BASE = (t: ReturnType<typeof getChartTheme>) => ({
 });
 
 // ── 1. 业绩规模柱状图（双柱：营收TTM + 净利润TTM） ──────────────────────
-export function RevenueProfitChart({
+export const RevenueProfitChart = memo(function RevenueProfitChart({
   dates,
   revenue,
   netProfit,
@@ -58,10 +58,10 @@ export function RevenueProfitChart({
   }, [setOption, dates, revenue, netProfit]);
 
   return <div ref={ref} style={{ height }} />;
-}
+});
 
 // ── 2. 双轴线图：营收+经营现金流 ──────────────────────────────────────
-export function DualAxisChart({
+export const DualAxisChart = memo(function DualAxisChart({
   dates, series, height = CHART_H,
 }: { dates: string[]; series: { name: string; data: number[]; type: "bar" | "line"; yAxisIndex?: 0 | 1; color?: string }[]; height?: number }) {
   const { ref, setOption } = useECharts();
@@ -97,10 +97,10 @@ export function DualAxisChart({
     }, true);
   }, [setOption, dates, series]);
   return <div ref={ref} style={{ height }} />;
-}
+});
 
 // ── 3. 饼图（业务构成） ─────────────────────────────────────────────
-export function DonutChart({ data, height = 200 }: { data: { name: string; value: number }[]; height?: number }) {
+export const DonutChart = memo(function DonutChart({ data, height = 200 }: { data: { name: string; value: number }[]; height?: number }) {
   const { ref, setOption } = useECharts();
   useEffect(() => {
     if (!setOption) return;
@@ -123,10 +123,10 @@ export function DonutChart({ data, height = 200 }: { data: { name: string; value
     }, true);
   }, [setOption, data]);
   return <div ref={ref} style={{ height }} />;
-}
+});
 
 // ── 4. 三费柱状图（研发/销售/管理费用占比） ──────────────────────────
-export function ExpenseStackedChart({
+export const ExpenseStackedChart = memo(function ExpenseStackedChart({
   dates, sell, admin, rd, revenue, height = 300,
 }: {
   dates: string[]; sell: number[]; admin: number[]; rd: number[];
@@ -191,10 +191,10 @@ export function ExpenseStackedChart({
     }, true);
   }, [setOption, dates, sell, admin, rd, revenue]);
   return <div ref={ref} style={{ height }} />;
-}
+});
 
 // ── 5. 资产负债结构（堆叠柱状） ──────────────────────────────────────
-export function BalanceStackedChart({
+export const BalanceStackedChart = memo(function BalanceStackedChart({
   dates, assets, liabilities, height = CHART_H,
 }: {
   dates: string[];
@@ -220,7 +220,7 @@ export function BalanceStackedChart({
     }, true);
   }, [setOption, dates, assets, liabilities]);
   return <div ref={ref} style={{ height }} />;
-}
+});
 
 // ── 资产负债类型定义 ────────────────────────────────────────────────
 export type BalanceBarItem = {
@@ -261,7 +261,7 @@ export function buildBalanceBarItem(p: Record<string, any>): BalanceBarItem[] {
 }
 
 // ── 8. 资产负债结构（单期柱形图，含上一期切换） ──────────────────────
-export function BalanceStructureChart({
+export const BalanceStructureChart = memo(function BalanceStructureChart({
   data, period, height = 320,
 }: {
   data: BalanceBarItem[];
@@ -332,10 +332,10 @@ export function BalanceStructureChart({
     }, true);
   }, [setOption, data, period]);
   return <div ref={ref} style={{ width: "100%", height }} />;
-}
+});
 
 // ── 6. 应收/营收 双轴图 ─────────────────────────────────────────────
-export function ArRevenueChart({
+export const ArRevenueChart = memo(function ArRevenueChart({
   dates, ar, revenue, arRatio, height = CHART_H,
 }: { dates: string[]; ar: number[]; revenue: number[]; arRatio: number[]; height?: number }) {
   const { ref, setOption } = useECharts();
@@ -360,10 +360,10 @@ export function ArRevenueChart({
     }, true);
   }, [setOption, dates, ar, revenue, arRatio]);
   return <div ref={ref} style={{ height }} />;
-}
+});
 
 // ── 6·2. 应付/营收 双轴图 ─────────────────────────────────────────────
-export function ApRevenueChart({
+export const ApRevenueChart = memo(function ApRevenueChart({
   dates, ap, revenue, apRatio, height = CHART_H,
 }: { dates: string[]; ap: number[]; revenue: number[]; apRatio: number[]; height?: number }) {
   const { ref, setOption } = useECharts();
@@ -388,10 +388,10 @@ export function ApRevenueChart({
     }, true);
   }, [setOption, dates, ap, revenue, apRatio]);
   return <div ref={ref} style={{ height }} />;
-}
+});
 
 // ── 6·3. PE 历史趋势图（含高估/低估参考线） ──────────────────────────
-export function PeTrendChart({
+export const PeTrendChart = memo(function PeTrendChart({
   periods, pe, peMean, peStd, height = 250,
 }: {
   periods: string[];
@@ -455,10 +455,10 @@ export function PeTrendChart({
     }, true);
   }, [setOption, periods, pe, peMean, peStd]);
   return <div ref={ref} style={{ height }} />;
-}
+});
 
 // ── 6·4. PS 历史趋势图（含高估/低估参考线） ──────────────────────────
-export function PsTrendChart({
+export const PsTrendChart = memo(function PsTrendChart({
   periods, ps, psMean, psStd, height = 250,
 }: {
   periods: string[];
@@ -520,10 +520,10 @@ export function PsTrendChart({
     }, true);
   }, [setOption, periods, ps, psMean, psStd]);
   return <div ref={ref} style={{ height }} />;
-}
+});
 
 // ── 7. 营收TTM + 市值（双 Y 轴单图） ────────────────────────────────
-export function RevenueMcapChart({
+export const RevenueMcapChart = memo(function RevenueMcapChart({
   dates, revenue, mcap, height = CHART_H,
 }: {
   dates: string[];
@@ -580,10 +580,10 @@ export function RevenueMcapChart({
     }, true);
   }, [setOption, dates, revenue, mcap]);
   return <div ref={ref} style={{ height }} />;
-}
+});
 
 // ── 5·2. 成本与毛利率分析 ──────────────────────────────────────────
-export function CostMarginChart({
+export const CostMarginChart = memo(function CostMarginChart({
   dates, revenue, cost, margin, height = CHART_H,
 }: { dates: string[]; revenue: (number | null)[]; cost: (number | null)[]; margin: number[]; height?: number }) {
   const { ref, setOption } = useECharts();
@@ -629,10 +629,10 @@ export function CostMarginChart({
     }, true);
   }, [setOption, dates, revenue, cost, margin]);
   return <div ref={ref} style={{ height }} />;
-}
+});
 
 // ── 7a. 近 N 年 CAGR 柱形图（4 列：市值/营收/净利/净资产） ──────────────
-export function CagrBarChart({
+export const CagrBarChart = memo(function CagrBarChart({
   data, subtitle, height = 280,
 }: {
   data: { name: string; value: number | null; color: string }[];
@@ -673,10 +673,10 @@ export function CagrBarChart({
     }, true);
   }, [setOption, data, subtitle]);
   return <div ref={ref} style={{ width: "100%", height }} />;
-}
+});
 
 // ── 7. 趋势折线（毛利率/净利率/ROE） ─────────────────────────────────
-export function MarginTrendChart({
+export const MarginTrendChart = memo(function MarginTrendChart({
   dates, gross, net, roe, height = CHART_H,
 }: { dates: string[]; gross: number[]; net: number[]; roe: number[]; height?: number }) {
   const { ref, setOption } = useECharts();
@@ -712,12 +712,12 @@ export function MarginTrendChart({
     }, true);
   }, [setOption, dates, gross, net, roe]);
   return <div ref={ref} style={{ height }} />;
-}
+});
 
 // ── 多系列折线图（按地区按时间趋势） ─────────────────────────────────
 const REGION_COLORS = ["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1"];
 
-export function MultiLineChart({
+export const MultiLineChart = memo(function MultiLineChart({
   periods,
   series,
   height = 260,
@@ -748,4 +748,4 @@ export function MultiLineChart({
     }, true);
   }, [setOption, periods, series, yUnit]);
   return <div ref={ref} style={{ height }} />;
-}
+});
